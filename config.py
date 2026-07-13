@@ -34,8 +34,14 @@ READ_ONLY = os.environ.get("READ_ONLY", "").lower() in ("1", "true", "yes")
 
 
 def _build_database_uri():
-    """DATABASE_URL (mặc định SQLite). Chuẩn hoá postgres:// → postgresql+psycopg2://."""
-    uri = os.environ.get("DATABASE_URL", "sqlite:///" + os.path.join(BASE_DIR, "movies.db"))
+    """Lấy DB URI theo thứ tự ưu tiên: DATABASE_URL → POSTGRES_PRISMA_URL (pooled) →
+    POSTGRES_URL → SQLite local. Chuẩn hoá postgres:// → postgresql+psycopg2://."""
+    for var in ("DATABASE_URL", "POSTGRES_PRISMA_URL", "POSTGRES_URL"):
+        uri = os.environ.get(var, "").strip()
+        if uri:
+            break
+    else:
+        uri = "sqlite:///" + os.path.join(BASE_DIR, "movies.db")
     if uri.startswith("postgres://"):
         return "postgresql+psycopg2://" + uri[len("postgres://"):]
     if uri.startswith("postgresql://"):
