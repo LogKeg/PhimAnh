@@ -66,4 +66,5 @@ def _ensure_columns():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    # use_reloader=False: reloader fork lại create_app → kẹt connection khi dùng Postgres
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True, use_reloader=False)
