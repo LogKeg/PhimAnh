@@ -10,3 +10,4 @@ movies.db
 static/posters/
 .DS_Store
 .claude/
+.vercel

@@ -1,5 +1,8 @@
 # models.py
-"""Model Movie: thông tin phim thu thập từ Wikidata/Wikipedia (không cần key)."""
+"""Model Movie: thông tin phim thu thập từ Wikidata/Wikipedia (không cần key).
+
+Lưu ý: các trường mô tả dùng db.Text (không giới hạn độ dài) để tương thích
+Postgres (VARCHAR(N) ở Postgres ÉP độ dài, khác SQLite)."""
 from datetime import datetime
 
 from extensions import db
@@ -16,22 +19,22 @@ class Movie(db.Model):
     __tablename__ = "movies"
 
     id = db.Column(db.Integer, primary_key=True)
-    wikidata_id = db.Column(db.String(32), index=True)  # Q-id, để khử trùng
-    imdb_id = db.Column(db.String(32), index=True)       # lấy từ Wikidata P345
-    title = db.Column(db.String(256), nullable=False)
+    wikidata_id = db.Column(db.String(32), index=True)
+    imdb_id = db.Column(db.String(32), index=True)
+    title = db.Column(db.Text, nullable=False)
     year = db.Column(db.String(16))
-    released = db.Column(db.String(64))
-    genre = db.Column(db.String(256))
-    director = db.Column(db.String(256))
-    actors = db.Column(db.String(512))
-    country = db.Column(db.String(256))
-    language = db.Column(db.String(128))
+    released = db.Column(db.Text)
+    genre = db.Column(db.Text)
+    director = db.Column(db.Text)
+    actors = db.Column(db.Text)
+    country = db.Column(db.Text)
+    language = db.Column(db.Text)
     runtime = db.Column(db.String(32))
     plot = db.Column(db.Text)
-    poster_url = db.Column(db.String(256))
-    wiki_title = db.Column(db.String(256))  # tiêu đề bài Wikipedia (vi) để enrich nội dung
-    imdb_url = db.Column(db.String(256))
-    watch_link = db.Column(db.String(256))  # URL tìm kiếm JustWatch theo vùng
+    poster_url = db.Column(db.Text)
+    wiki_title = db.Column(db.Text)
+    imdb_url = db.Column(db.Text)
+    watch_link = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # ---- Helpers hiển thị / lọc ----

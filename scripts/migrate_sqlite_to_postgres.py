@@ -11,6 +11,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+try:
+    from dotenv import load_dotenv  # nạp DATABASE_URL từ .env nếu có
+    load_dotenv()
+except ImportError:
+    pass
+
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 
@@ -38,9 +44,10 @@ def main():
     src_engine = create_engine(src_uri)
     dst_engine = create_engine(_normalize(dst), pool_pre_ping=True)
 
-    # Tạo schema trên Postgres
+    # Tạo lại schema trên Postgres (drop schema cũ nếu có để đúng kiểu Text)
+    db.metadata.drop_all(dst_engine)
     db.metadata.create_all(dst_engine)
-    print("Đã tạo schema trên Postgres.")
+    print("Đã (tạo lại) schema trên Postgres.")
 
     Src = sessionmaker(bind=src_engine)
     Dst = sessionmaker(bind=dst_engine)
