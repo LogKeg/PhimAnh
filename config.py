@@ -29,6 +29,11 @@ R2_SECRET_KEY = os.environ.get("R2_SECRET_KEY", "")
 R2_BUCKET = os.environ.get("R2_BUCKET", "")
 R2_PUBLIC_BASE = os.environ.get("R2_PUBLIC_BASE", "")  # vd https://pub-xxx.r2.dev
 
+# ---- Cloudinary (POSTER_BACKEND=cloudinary, free, không cần thẻ) ----
+CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+
 # ---- Online read-only: true → ẩn form cào (chỉ chạy local) ----
 READ_ONLY = os.environ.get("READ_ONLY", "").lower() in ("1", "true", "yes")
 

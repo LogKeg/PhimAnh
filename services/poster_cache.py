@@ -10,7 +10,8 @@ from urllib.parse import urlparse
 import requests
 
 from config import (
-    BASE_DIR, POSTER_BACKEND,
+    BASE_DIR, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET, CLOUDINARY_CLOUD_NAME,
+    POSTER_BACKEND,
     R2_ACCESS_KEY, R2_ACCOUNT_ID, R2_BUCKET, R2_PUBLIC_BASE, R2_SECRET_KEY,
 )
 
@@ -33,7 +34,34 @@ def cache_poster(remote_url, key):
         return remote_url
     if POSTER_BACKEND == "r2":
         return _upload_r2(remote_url, key)
+    if POSTER_BACKEND == "cloudinary":
+        return _upload_cloudinary(remote_url, key)
     return _cache_local(remote_url, key)
+
+
+def _upload_cloudinary(remote_url, key):
+    """Tải rồi upload lên Cloudinary, trả URL cố định — fallback URL gốc nếu lỗi/chưa cấu hình."""
+    if not (CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET):
+        return remote_url
+    try:
+        data, _ = _download(remote_url)
+        import cloudinary  # lazy: local mặc định không cần cloudinary
+        from cloudinary import uploader
+        from io import BytesIO
+        cloudinary.config(cloud_name=CLOUDINARY_CLOUD_NAME, api_key=CLOUDINARY_API_KEY,
+                          api_secret=CLOUDINARY_API_SECRET, secure=True)
+        ext = _ext(remote_url).lstrip(".")
+        res = uploader.upload(
+            BytesIO(data),
+            public_id=_safe(key),
+            unique_filename=False,
+            overwrite=True,
+            resource_type="image",
+            **({"format": ext} if ext in ("jpg", "jpeg", "png", "webp") else {}),
+        )
+        return res.get("secure_url") or remote_url
+    except Exception:  # pylint: disable=broad-except
+        return remote_url
 
 
 def _download(remote_url):

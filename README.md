@@ -55,18 +55,20 @@ cp .env.example .env
 > **Không cần đăng ký API key nào.** Dữ liệu lấy trực tiếp từ Wikidata/Wikipedia (dữ liệu mở).
 
 ## Deploy lên Vercel (online read-only)
-Kiến trúc: cào data ở **local** → ghi vào **Vercel Postgres** + poster lên **Cloudflare R2**; Vercel chạy **read-only**.
+Kiến trúc: cào data ở **local** → ghi vào **Vercel Postgres** + poster lên **Cloudinary**; Vercel chạy **read-only**.
 
 1. Push repo lên GitHub (private).
 2. Vercel: import repo → tự nhận Flask qua `vercel.json` + `api/index.py`.
-3. Tạo **Vercel Postgres**, **Cloudflare R2** (bucket + token + public domain).
-4. Set env vars trên Vercel: `DATABASE_URL`, `FLASK_SECRET_KEY`, `READ_ONLY=true`,
-   `POSTER_BACKEND=r2`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET`, `R2_PUBLIC_BASE`.
-5. Ở local (set cùng env, `DATABASE_URL`=Postgres, `READ_ONLY` bỏ trống):
-   - `DATABASE_URL=... python3 scripts/migrate_sqlite_to_postgres.py` — chuyển 11k phim sang Postgres.
-   - `... python3 scripts/upload_posters_to_r2.py` — đẩy poster local lên R2.
-   - Sau đó cào thêm (seed/poster/plot) ghi thẳng Postgres + R2.
+3. Tạo **Vercel Postgres** (Storage → Postgres → Connect to project; app tự đọc `POSTGRES_*`).
+4. Tạo **Cloudinary** (free, không cần thẻ): lấy `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+5. Set env trên Vercel: `FLASK_SECRET_KEY`, `READ_ONLY=true`, `POSTER_BACKEND=cloudinary`,
+   `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (DB tự inject `POSTGRES_*`).
+6. Ở local (set cùng env + `DATABASE_URL`=Postgres, `READ_ONLY` bỏ trống):
+   - `python3 scripts/migrate_sqlite_to_postgres.py` — chuyển ~11k phim sang Postgres.
+   - `python3 scripts/upload_posters_to_cloudinary.py` — đẩy poster local lên Cloudinary.
+   - Sau đó cào thêm (seed/poster/plot) ghi thẳng Postgres + Cloudinary.
 
+> Poster backend (qua `POSTER_BACKEND`): `local` (dev), `cloudinary` (online/khuyên), `r2` (có thẻ), `remote` (giữ URL gốc).
 > Vercel là serverless: KHÔNG chạy được background thread / Playwright → mọi cào phải ở local.
 
 

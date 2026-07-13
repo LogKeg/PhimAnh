@@ -1,4 +1,5 @@
-# Phụ thuộc chỉ dùng ở LOCAL (cào IMDb + upload R2). KHÔNG deploy lên Vercel.
+# Phụ thuộc chỉ dùng ở LOCAL (cào IMDb + upload poster R2/Cloudinary). KHÔNG deploy lên Vercel.
 -r requirements.txt
 playwright>=1.40
 boto3>=1.34
+cloudinary>=1.40
