@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phim Ảnh — Cinémathèque</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('main.index') }}">PHIM<em> ẢNH</em></a>
+            <div class="topbar-meta">
+                <span><b>{{ pagination.total }}</b> phim trong kho</span>
+                <span>Wikidata · Wikipedia</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="shell">
+        <section class="lead">
+            <h1>Bộ sưu tập<br><i>điện ảnh.</i></h1>
+            <p class="lead-sub">
+                <span class="kicker">Tự thu thập · không cần API key</span>
+                Tìm, lọc và sắp xếp phim theo thể loại, quốc gia, diễn viên và năm ra mắt — dữ liệu mở lấy trực tiếp từ Wikidata &amp; Wikipedia.
+            </p>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# ---- Console: collect + seed + filter ---- #}
+        <section class="console" aria-label="Bảng điều khiển">
+          {% if not read_only %}
+            <div class="console-row">
+                {# Thu thập theo tên #}
+                <div class="cell">
+                    <form action="{{ url_for('main.index') }}" method="POST" class="field">
+                        <input type="hidden" name="action" value="collect" />
+                        {% for k in ['search_text','actor_name','sort_by','filter_value','order'] %}
+                            <input type="hidden" name="{{ k }}" value="{{ request.args.get(k, '') }}" />
+                        {% endfor %}
+                        <input name="title" type="text" placeholder="Tên phim… vd: Inception" aria-label="Tên phim cần thu thập" required />
+                        <button type="submit" class="btn btn-primary">Thu thập</button>
+                    </form>
+                </div>
+
+                {# Gieo hạt theo năm #}
+                <div class="cell">
+                    <form action="{{ url_for('main.index') }}" method="POST" class="field">
+                        <input type="hidden" name="action" value="seed" />
+                        {% for k in ['search_text','actor_name','sort_by','filter_value','order'] %}
+                            <input type="hidden" name="{{ k }}" value="{{ request.args.get(k, '') }}" />
+                        {% endfor %}
+                        <div class="pair" style="flex:1">
+                            <input name="year" type="number" min="1900" max="2099" value="2023" placeholder="Năm" aria-label="Năm phát hành" style="max-width:110px" />
+                            <input name="limit" type="number" min="1" max="100" value="30" placeholder="Số lượng" aria-label="Số lượng phim" style="max-width:120px" />
+                        </div>
+                        <button type="submit" class="btn btn-ghost">Gieo hạt</button>
+                    </form>
+                </div>
+            </div>
+          {% endif %}
+
+            <div class="console-row">
+                {# Tìm + lọc #}
+                <div class="cell" style="grid-column: 1 / -1">
+                    <form action="{{ url_for('main.index') }}" method="GET" class="filter-grid">
+                        <div>
+                            <span class="lbl">Tên phim</span>
+                            <input name="search_text" value="{{ search_text }}" placeholder="Tìm theo tên…" />
+                        </div>
+                        <div>
+                            <span class="lbl">Diễn viên</span>
+                            <input name="actor_name" value="{{ actor_name }}" placeholder="Tìm theo diễn viên…" />
+                        </div>
+                        <div>
+                            <span class="lbl">Lọc theo</span>
+                            <select id="sort_by" name="sort_by">
+                                <option value="">— Không —</option>
+                                <option value="genre"   {{ 'selected' if sort_by == 'genre'   else '' }}>Thể loại</option>
+                                <option value="country" {{ 'selected' if sort_by == 'country' else '' }}>Quốc gia</option>
+                                <option value="actor"   {{ 'selected' if sort_by == 'actor'   else '' }}>Diễn viên</option>
+                                <option value="year"    {{ 'selected' if sort_by == 'year'    else '' }}>Năm</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span class="lbl">Giá trị</span>
+                            <select id="filter_value" name="filter_value">
+                                {% if not sort_by %}<option value="">— Chọn kiểu lọc trước —</option>{% endif %}
+                            </select>
+                        </div>
+                        <div>
+                            <span class="lbl">Thứ tự</span>
+                            <select name="order">
+                                <option value="newest" {{ 'selected' if order == 'newest' else '' }}>Mới nhất</option>
+                                <option value="oldest" {{ 'selected' if order == 'oldest' else '' }}>Cũ nhất</option>
+                                <option value="title"  {{ 'selected' if order == 'title'  else '' }}>Tên A–Z</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Áp dụng</button>
+                        <a class="btn btn-ghost" href="{{ url_for('main.index') }}">Xoá lọc</a>
+                    </form>
+                </div>
+            </div>
+
+          {% if not read_only %}
+            <div class="console-row">
+                {# Lấy poster IMDb cho phim thiếu #}
+                <div class="cell" style="grid-column: 1 / -1">
+                    <form action="{{ url_for('main.index') }}" method="POST" class="field">
+                        <input type="hidden" name="action" value="enrich_posters" />
+                        {% for k in ['search_text','actor_name','sort_by','filter_value','order'] %}
+                            <input type="hidden" name="{{ k }}" value="{{ request.args.get(k, '') }}" />
+                        {% endfor %}
+                        <input name="limit" type="number" min="1" max="500" value="100" aria-label="Số lượng phim cần lấy poster" style="max-width:110px" />
+                        <button type="submit" class="btn btn-ghost">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                            Lấy poster IMDb cho phim thiếu
+                        </button>
+                        <span class="hint" style="margin:0;align-self:center">Chromium headless, ~1s/phim · viển ToS IMDb</span>
+                    </form>
+                </div>
+            </div>
+
+            <div class="console-row">
+                {# Lấy mô tả phim (Wikipedia vi→en) — chạy ngầm, nhanh, không browser #}
+                <div class="cell" style="grid-column: 1 / -1">
+                    <form action="{{ url_for('main.index') }}" method="POST" class="field">
+                        <input type="hidden" name="action" value="enrich_plots" />
+                        {% for k in ['search_text','actor_name','sort_by','filter_value','order'] %}
+                            <input type="hidden" name="{{ k }}" value="{{ request.args.get(k, '') }}" />
+                        {% endfor %}
+                        <input name="limit" type="number" min="1" max="5000" value="5000" aria-label="Số lượng phim cần lấy mô tả" style="max-width:120px" />
+                        <button type="submit" class="btn btn-primary">Lấy mô tả phim</button>
+                        <span class="hint" style="margin:0;align-self:center">Wikipedia vi→en · ~0.5s/phim · chạy nền</span>
+                    </form>
+                </div>
+            </div>
+
+            <div class="console-row">
+                {# Cào lớn theo khoảng năm (ngầm) #}
+                <div class="cell" style="grid-column: 1 / -1">
+                    <form action="{{ url_for('main.index') }}" method="POST" class="field">
+                        <input type="hidden" name="action" value="seed_bulk" />
+                        {% for k in ['search_text','actor_name','sort_by','filter_value','order'] %}
+                            <input type="hidden" name="{{ k }}" value="{{ request.args.get(k, '') }}" />
+                        {% endfor %}
+                        <input name="start_year" type="number" min="1900" max="2099" value="2000" aria-label="Năm bắt đầu" style="max-width:120px" />
+                        <input name="end_year" type="number" min="1900" max="2099" value="2020" aria-label="Năm kết thúc" style="max-width:120px" />
+                        <input name="per_year" type="number" min="1" max="500" value="100" aria-label="Số phim mỗi năm" style="max-width:130px" />
+                        <label class="chk"><input type="checkbox" name="with_poster" checked /> Ảnh Wikidata</label>
+                        <label class="chk"><input type="checkbox" name="with_plot" /> Mô tả Wikipedia</label>
+                        <button type="submit" class="btn btn-primary">Cào lớn (chạy ngầm)</button>
+                        <span class="hint" style="margin:0;align-self:center">Wikidata · chạy nền · IMDb poster dùng nút riêng</span>
+                    </form>
+                </div>
+            </div>
+          {% endif %}
+
+            <div class="console-row" id="progress-row" hidden>
+                <div class="cell" style="grid-column: 1 / -1">
+                    <div class="progress-area" id="progress-area"></div>
+                </div>
+            </div>
+        </section>
+
+        {# ---- Poster wall ---- #}
+        <div class="sect-head">
+            <h2>Trên màn ảnh</h2>
+            <span class="tag">{{ pagination.total }} tựa · trang {{ pagination.page }}/{{ pagination.pages if pagination.pages else 1 }}</span>
+        </div>
+
+        {% if movies %}
+            <div class="wall-grid">
+                {% for movie in movies %}
+                    <a class="poster-card" style="--i:{{ loop.index0 }}" href="{{ url_for('main.movie_detail', movie_id=movie.id) }}">
+                        <div class="poster-frame">
+                            {% if movie.poster_url %}
+                                <img src="{{ movie.poster_url }}" alt="Poster {{ movie.title }}" loading="lazy" />
+                            {% else %}
+                                <div class="poster-noimg">{{ movie.title }}</div>
+                            {% endif %}
+                            <div class="poster-title">{{ movie.title }}</div>
+                        </div>
+                        <div class="poster-foot">
+                            <span class="yr">{{ movie.year or '—' }}</span>
+                            <span>{{ movie.country.split(',')[0].strip() if movie.country else 'Không rõ' }}</span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+
+            {% if pagination.pages > 1 %}
+                <nav class="pagination" aria-label="Phân trang">
+                    {% if pagination.has_prev %}
+                        <a href="{{ url_for('main.index', search_text=search_text, actor_name=actor_name, sort_by=sort_by, filter_value=filter_value, order=order, page=pagination.prev_num) }}">‹ Trước</a>
+                    {% else %}<span class="disabled">‹ Trước</span>{% endif %}
+                    {% for p in pagination.iter_pages() %}
+                        {% if p %}
+                            {% if p == pagination.page %}<span class="current">{{ p }}</span>
+                            {% else %}<a href="{{ url_for('main.index', search_text=search_text, actor_name=actor_name, sort_by=sort_by, filter_value=filter_value, order=order, page=p) }}">{{ p }}</a>{% endif %}
+                        {% else %}<span class="ellipsis">…</span>{% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                        <a href="{{ url_for('main.index', search_text=search_text, actor_name=actor_name, sort_by=sort_by, filter_value=filter_value, order=order, page=pagination.next_num) }}">Sau ›</a>
+                    {% else %}<span class="disabled">Sau ›</span>{% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty">
+                <span class="big">Phòng chiếu còn trống.</span>
+                Thu thập một phim theo tên, hoặc gieo hạt theo năm để bắt đầu bộ sưu tập.
+            </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        <div class="foot-inner">
+            <span>PHIM <em>ẢNH</em></span>
+            <span>Dữ liệu mở · Wikidata + Wikipedia</span>
+        </div>
+    </footer>
+
+    {# ---- Filter dropdown engine (giữ nguyên logic) ---- #}
+    <script id="filter-data" type="application/json">{{ filters | tojson }}</script>
+    <script>
+        const data = JSON.parse(document.getElementById('filter-data').textContent);
+        const keyMap = { genre: 'genres', country: 'countries', actor: 'actors', year: 'years' };
+        const sortBy = document.getElementById('sort_by');
+        const filterValue = document.getElementById('filter_value');
+        const current = "{{ filter_value }}";
+        function rebuild() {
+            const list = data[keyMap[sortBy.value]] || [];
+            filterValue.innerHTML = '';
+            if (!sortBy.value) {
+                filterValue.innerHTML = '<option value="">— Chọn kiểu lọc trước —</option>';
+                filterValue.disabled = true;
+                return;
+            }
+            filterValue.disabled = false;
+            const empty = document.createElement('option');
+            empty.value = ''; empty.textContent = '— Tất cả —';
+            filterValue.appendChild(empty);
+            list.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v; opt.textContent = v;
+                if (v === current) opt.selected = true;
+                filterValue.appendChild(opt);
+            });
+        }
+        sortBy.addEventListener('change', rebuild);
+        rebuild();
+    </script>
+
+    {# ---- Poll tiến độ các job ngầm (cào phim + poster IMDb) ---- #}
+    <script>
+    (function () {
+        const row = document.getElementById('progress-row');
+        const area = document.getElementById('progress-area');
+        if (!row || !area) return;
+        let hadRunning = false;
+        let reloading = false;
+
+        function bar(job) {
+            const pct = job.done ? 100 : (job.total ? Math.round(job.done_count / job.total * 100) : 0);
+            const statusTxt = job.done ? 'Hoàn tất' : 'Đang chạy';
+            const counts = '+' + job.added + (job.skipped ? ' · ' + job.skipped + ' trùng' : '')
+                         + ' · ' + job.done_count + '/' + (job.total || '?');
+            const sub = (job.current ? job.current + ' — ' : '') + (job.message || '');
+            return '<div class="bulk-progress">'
+                + '<div class="bp-head"><span>' + job.label + ': ' + statusTxt + '</span>'
+                + '<span>' + counts + '</span></div>'
+                + '<div class="bp-bar"><div class="bp-fill" style="width:' + pct + '%"></div></div>'
+                + '<div class="bp-sub">' + sub + '</div></div>';
+        }
+
+        async function tick() {
+            let s = {};
+            try { s = await (await fetch('{{ url_for("main.seed_status") }}', {cache: 'no-store'})).json(); }
+            catch (e) { return schedule(); }
+
+            const jobs = ['seed', 'posters', 'plots'].map(n => s[n]).filter(j => j && (j.running || j.done));
+            area.innerHTML = jobs.map(bar).join('');
+            row.hidden = jobs.length === 0;
+
+            const anyRunning = jobs.some(j => j.running);
+            if (anyRunning) hadRunning = true;
+            if (hadRunning && !anyRunning && !reloading) {
+                reloading = true;
+                setTimeout(() => location.reload(), 1500);
+            }
+            schedule();
+        }
+        function schedule() { setTimeout(tick, 2000); }
+        tick();
+    })();
+    </script>
+</body>
+</html>

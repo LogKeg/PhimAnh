@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ movie.title }} — Phim Ảnh</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <div class="topbar-inner">
+            <a class="brand" href="{{ url_for('main.index') }}">PHIM<em> ẢNH</em></a>
+            <div class="topbar-meta"><span>Chi tiết phim</span></div>
+        </div>
+    </header>
+
+    <div class="shell">
+        <section class="detail">
+            <a class="back-link" href="{{ url_for('main.index') }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+                Quay lại kho phim
+            </a>
+
+            <div class="detail-grid">
+                <div class="detail-poster">
+                    {% if movie.poster_url %}
+                        <img src="{{ movie.poster_url }}" alt="Poster {{ movie.title }}" />
+                    {% else %}
+                        <div class="poster-noimg" style="position:static;display:flex;height:100%">{{ movie.title }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="detail-info">
+                    {% if movie.genre %}
+                        <div class="detail-tagline">{{ movie.genre.split(',')[0].strip() }}</div>
+                    {% endif %}
+                    <h1 class="detail-title">{{ movie.title }}</h1>
+
+                    <div class="detail-links">
+                        {% if movie.watch_link %}
+                            <a class="btn btn-primary" href="{{ movie.watch_link }}" target="_blank" rel="noopener">
+                                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                                Xem / tìm nơi chiếu
+                            </a>
+                        {% endif %}
+                        {% if movie.imdb_url %}
+                            <a class="btn btn-ghost" href="{{ movie.imdb_url }}" target="_blank" rel="noopener">Trang IMDb ↗</a>
+                        {% endif %}
+                    </div>
+
+                    <div class="spec">
+                        <dl>
+                            <dt>Năm</dt>           <dd>{{ movie.year or '—' }}</dd>
+                            <dt>Ngày ra mắt</dt>   <dd>{{ movie.released or '—' }}</dd>
+                            <dt>Thời lượng</dt>    <dd>{{ movie.runtime or '—' }}</dd>
+                            <dt>Quốc gia</dt>      <dd>{{ movie.country or '—' }}</dd>
+                            <dt>Ngôn ngữ</dt>      <dd>{{ movie.language or '—' }}</dd>
+                            <dt>Đạo diễn</dt>      <dd>{{ movie.director or '—' }}</dd>
+                            <dt>Diễn viên</dt>     <dd>{{ movie.actors or '—' }}</dd>
+                            <dt>Thể loại</dt>      <dd>{{ movie.genre or '—' }}</dd>
+                        </dl>
+                    </div>
+
+                    <h2 class="plot-h">Tóm tắt</h2>
+                    <p class="plot">{{ movie.plot or 'Chưa có nội dung. App sẽ tự lấy từ Wikipedia khi mở lại sau.' }}</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <div class="foot-inner">
+            <span>PHIM <em>ẢNH</em></span>
+            <span>Dữ liệu mở · Wikidata + Wikipedia</span>
+        </div>
+    </footer>
+</body>
+</html>

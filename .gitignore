@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+movies.db
+*.db
+*.db-wal
+*.db-shm
+.env
+static/posters/
+.DS_Store
+.claude/
