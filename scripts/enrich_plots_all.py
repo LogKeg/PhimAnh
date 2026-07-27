@@ -11,6 +11,14 @@ import sys
 # Cho phép import các module ở thư mục gốc
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Phải load .env TRƯỚC khi import app/config — config._build_database_uri() chạy lúc
+# import, nếu chưa có DATABASE_URL sẽ fallback SQLite (mất dữ liệu vào movies.db).
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from app import create_app          # noqa: E402
 from services import collector      # noqa: E402
 
