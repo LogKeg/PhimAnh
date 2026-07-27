@@ -348,6 +348,20 @@ select:disabled { opacity: 0.45; cursor: not-allowed; }
     background: linear-gradient(180deg, transparent 45%, rgba(13,13,15,0.55) 72%, rgba(13,13,15,0.96) 100%);
     pointer-events: none;
 }
+/* badge điểm IMDb — góc trên bên phải */
+.poster-rating {
+    position: absolute;
+    top: 8px; right: 8px;
+    z-index: 3;
+    padding: 3px 7px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #f5c518;            /* vàng IMDb */
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    backdrop-filter: blur(2px);
+}
 .poster-title {
     position: absolute;
     left: 14px; right: 14px; bottom: 12px;

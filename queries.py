@@ -99,5 +99,8 @@ def _order_clause(order):
         return nulls_last, year.asc(), released.asc(), title.asc()
     if order == "title":
         return (title.asc(),)
+    if order == "rating":
+        # điểm cao → thấp, phim thiếu điểm đẩy cuối, tie-break theo năm giảm dần
+        return Movie.imdb_rating.is_(None).asc(), Movie.imdb_rating.desc(), year.desc()
     # newest (mặc định): năm giảm dần → ngày giảm dần → tên
     return nulls_last, year.desc(), released.desc(), title.asc()

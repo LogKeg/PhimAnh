@@ -105,6 +105,7 @@
                                 <option value="newest" {{ 'selected' if order == 'newest' else '' }}>Mới nhất</option>
                                 <option value="oldest" {{ 'selected' if order == 'oldest' else '' }}>Cũ nhất</option>
                                 <option value="title"  {{ 'selected' if order == 'title'  else '' }}>Tên A–Z</option>
+                                <option value="rating" {{ 'selected' if order == 'rating' else '' }}>Điểm IMDb cao</option>
                             </select>
                         </div>
                         <button type="submit" class="btn btn-primary">Áp dụng</button>
@@ -189,6 +190,9 @@
                                 <img src="{{ movie.poster_url }}" alt="Poster {{ movie.title }}" loading="lazy" />
                             {% else %}
                                 <div class="poster-noimg">{{ movie.title }}</div>
+                            {% endif %}
+                            {% if movie.imdb_rating %}
+                                <span class="poster-rating" title="{{ movie.imdb_votes|default(0) }} lượt">★ {{ '%.1f'|format(movie.imdb_rating) }}</span>
                             {% endif %}
                             <div class="poster-title">{{ movie.title }}</div>
                         </div>

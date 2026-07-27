@@ -34,6 +34,8 @@ class Movie(db.Model):
     poster_url = db.Column(db.Text)
     wiki_title = db.Column(db.Text)
     imdb_url = db.Column(db.Text)
+    imdb_rating = db.Column(db.Float)       # điểm IMDb 0.0-10.0 (dataset chính thức, non-commercial)
+    imdb_votes = db.Column(db.Integer)      # số lượt bình chọn IMDb
     watch_link = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
