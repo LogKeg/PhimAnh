@@ -11,3 +11,4 @@ static/posters/
 .DS_Store
 .claude/
 .vercel
+logs/
