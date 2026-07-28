@@ -51,19 +51,26 @@ def _apply(movie, record):
 
 
 def get_filter_values():
-    """Tập hợp giá trị duy nhất từ DB để render dropdown lọc."""
-    genres, countries, actors, years = set(), set(), set(), set()
-    for movie in Movie.query.all():
-        genres.update(movie.get_genres())
-        countries.update(movie.get_countries())
-        actors.update(movie.get_actors())
-        if movie.year:
-            years.add(movie.year)
+    """Tập hợp giá trị duy nhất từ DB để render dropdown lọc.
+
+    Dùng DISTINCT từng cột (genre/country/actors là chuỗi CSV → tách trong Python)
+    thay vì Movie.query.all() từng load cả bảng 11k phim (kèm plot Text dài) —
+    gây chậm/timeout trang chủ qua Postgres remote (local + Vercel serverless).
+    """
+    from models import _split_csv
+
+    def _distinct_csv(col):
+        vals = set()
+        for (raw,) in db.session.query(col).distinct():
+            vals.update(_split_csv(raw))
+        return vals
+
+    years = {y for (y,) in db.session.query(Movie.year).distinct() if y}
     return {
-        "genres": sorted(g for g in genres if g),
-        "countries": sorted(c for c in countries if c),
-        "actors": sorted(a for a in actors if a),
-        "years": sorted(y for y in years if y),
+        "genres": sorted(g for g in _distinct_csv(Movie.genre) if g),
+        "countries": sorted(c for c in _distinct_csv(Movie.country) if c),
+        "actors": sorted(a for a in _distinct_csv(Movie.actors) if a),
+        "years": sorted(years),
     }
 
 
