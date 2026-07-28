@@ -2,6 +2,14 @@
 """Entry point: tạo Flask app, khởi tạo DB, tự động ALTER thêm cột mới cho DB cũ."""
 import os
 
+# Nạp .env TRƯỚC khi import config — config._build_database_uri() đọc DATABASE_URL
+# lúc import; nếu chưa load sẽ fallback SQLite (mất data Postgres, app đọc DB sai).
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from flask import Flask
 from sqlalchemy import inspect, text
 
@@ -12,13 +20,6 @@ from models import Movie
 
 def create_app(config_class=Config):
     """Application factory."""
-    # python-dotenv tuỳ chọn: nạp biến từ file .env nếu có
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-
     app = Flask(__name__)
     app.config.from_object(config_class)
     db.init_app(app)
