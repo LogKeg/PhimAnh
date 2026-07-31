@@ -5,7 +5,7 @@ from flask import (Blueprint, current_app, render_template, request, redirect,
 
 from config import READ_ONLY
 from models import Movie
-from queries import get_filter_values, query_movies, upsert_movie
+from queries import get_featured, get_filter_values, query_movies, upsert_movie
 from services import bulk, collector
 
 bp = Blueprint("main", __name__)
@@ -42,6 +42,7 @@ def index():
         "index.html",
         movies=pagination.items,
         pagination=pagination,
+        featured=get_featured(),
         filters=get_filter_values(),
         read_only=READ_ONLY,
         **args,

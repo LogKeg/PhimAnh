@@ -13,19 +13,42 @@
         <div class="topbar-inner">
             <a class="brand" href="{{ url_for('main.index') }}">PHIM<em> ẢNH</em></a>
             <div class="topbar-meta">
-                <span><b>{{ pagination.total }}</b> phim trong kho</span>
-                <span>Wikidata · Wikipedia</span>
+                <span class="vol">Cinémathèque · <b>Vol. 01</b></span>
+                <span><b>{{ pagination.total }}</b> tựa trong kho</span>
             </div>
         </div>
     </header>
 
     <div class="shell">
-        <section class="lead">
-            <h1>Bộ sưu tập<br><i>điện ảnh.</i></h1>
-            <p class="lead-sub">
-                <span class="kicker">Tự thu thập · không cần API key</span>
-                Tìm, lọc và sắp xếp phim theo thể loại, quốc gia, diễn viên và năm ra mắt — dữ liệu mở lấy trực tiếp từ Wikidata &amp; Wikipedia.
-            </p>
+        {# ---- Magazine cover hero ---- #}
+        <section class="cover">
+            <div class="cover-leak" aria-hidden="true"></div>
+            <div class="cover-grid">
+                <div class="cover-text">
+                    <span class="cover-kicker">Sổ ghi chép điện ảnh · {{ pagination.total }} tựa</span>
+                    <h1 class="cover-title">Bộ sưu tập<br><i>điện ảnh.</i></h1>
+                    <p class="cover-sub">
+                        Tự thu thập, không cần API key. Tìm, lọc và sắp xếp phim theo thể loại, quốc gia, diễn viên và năm ra mắt — dữ liệu mở lấy trực tiếp từ Wikidata &amp; Wikipedia.
+                    </p>
+                    {% if featured %}
+                    <a class="cover-feat" href="{{ url_for('main.movie_detail', movie_id=featured.id) }}">
+                        <span class="feat-tag">§ Tiêu điểm số này</span>
+                        <span class="feat-title">{{ featured.title }} <em>{{ featured.year or '' }}</em></span>
+                        <span class="feat-meta">
+                            {% if featured.imdb_rating is not none %}<b class="feat-rating">★ {{ '%.1f'|format(featured.imdb_rating) }}</b>{% endif %}
+                            <span>{{ featured.country.split(',')[0].strip() if featured.country else '—' }}</span>
+                            {% if featured.director %}<span>đd. {{ featured.director.split(',')[0].strip() }}</span>{% endif %}
+                        </span>
+                    </a>
+                    {% endif %}
+                </div>
+                {% if featured and featured.poster_url %}
+                <a class="cover-poster" href="{{ url_for('main.movie_detail', movie_id=featured.id) }}" aria-label="{{ featured.title }}">
+                    <img src="{{ featured.poster_url }}" alt="Poster {{ featured.title }}" />
+                    <span class="cover-stamp">Now<br>show­ing</span>
+                </a>
+                {% endif %}
+            </div>
         </section>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -177,7 +200,7 @@
 
         {# ---- Poster wall ---- #}
         <div class="sect-head">
-            <h2>Trên màn ảnh</h2>
+            <h2><span class="sec-no">§ 01</span>Trên màn ảnh</h2>
             <span class="tag">{{ pagination.total }} tựa · trang {{ pagination.page }}/{{ pagination.pages if pagination.pages else 1 }}</span>
         </div>
 

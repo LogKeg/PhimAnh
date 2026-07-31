@@ -74,6 +74,17 @@ def get_filter_values():
     }
 
 
+def get_featured():
+    """Phim tiêu điểm cho hero bìa: điểm IMDb cao nhất có poster (tiebreak: lượt vote)."""
+    return (
+        Movie.query
+        .filter(Movie.imdb_rating.isnot(None))
+        .filter(Movie.poster_url.isnot(None), Movie.poster_url != "")
+        .order_by(Movie.imdb_rating.desc(), Movie.imdb_votes.desc())
+        .first()
+    )
+
+
 def query_movies(search_text=None, actor_name=None, sort_by=None,
                  filter_value=None, order="newest", page=1, per_page=PER_PAGE):
     """Tìm + lọc + phân trang phim theo tiêu đề/diễn viên/điều kiện lọc."""
