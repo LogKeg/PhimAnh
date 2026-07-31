@@ -102,3 +102,54 @@ def imdb_posters_iter(items, limit=20):
 def imdb_posters_bulk(items, limit=20):
     """Lấy poster cho nhiều phim (mở 1 trình duyệt). Trả về list of (id, url, error)."""
     return list(imdb_posters_iter(items, limit=limit))
+
+
+def _fetch_title(page, imdb_id):
+    """Mở trang IMDb title → đọc meta og:title, bỏ suffix '- IMDb' và '(Năm)'."""
+    import re
+    page.goto(
+        f"https://www.imdb.com/title/{imdb_id}/",
+        wait_until="domcontentloaded",
+        timeout=TIMEOUT_MS,
+    )
+    try:
+        page.wait_for_selector('meta[property="og:title"]', timeout=15000)
+    except Exception:  # pylint: disable=broad-except
+        pass
+    raw = (page.get_attribute('meta[property="og:title"]', "content") or "").strip()
+    raw = re.sub(r"\s*-\s*IMDb\s*$", "", raw).strip()        # "Inception - IMDb" → "Inception"
+    raw = re.sub(r"\s*\(\d{4}\)\s*$", "", raw).strip()        # "Inception (2010)" → "Inception"
+    return raw
+
+
+def imdb_titles_iter(items, limit=20):
+    """Generator: mở 1 trình duyệt, yield (id, title, error) cho mỗi phim.
+
+    Dùng cho fix_qid_titles: rescue tên phim từ IMDb og:title cho phim đang bị
+    lưu title = mã QID (Wikidata không có nhãn).
+    """
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        for item_id, _ in items[:limit]:
+            yield (item_id, "", "chưa cài playwright")
+        return
+    try:
+        with sync_playwright() as pw:
+            browser = pw.chromium.launch(headless=True, args=LAUNCH_ARGS)
+            page = _new_page(browser)
+            try:
+                for item_id, imdb_id in items[:limit]:
+                    if not imdb_id:
+                        yield (item_id, "", "thiếu imdb_id")
+                        continue
+                    try:
+                        title = _fetch_title(page, imdb_id)
+                        yield (item_id, title, None if title else "không có og:title")
+                    except Exception as exc:  # pylint: disable=broad-except
+                        yield (item_id, "", f"lỗi: {exc}")
+            finally:
+                browser.close()
+    except Exception as exc:  # pylint: disable=broad-except
+        for item_id, _ in items[:limit]:
+            yield (item_id, "", f"lỗi trình duyệt: {exc}")
