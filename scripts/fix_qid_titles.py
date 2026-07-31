@@ -69,30 +69,23 @@ def main():
                 titles[movie_id] = title
         print(f"  fetch lô {i // BATCH + 1}: {len(titles)} title hợp lệ (tích lũy)", flush=True)
 
-    # Pha ghi: xoá rác + xoá rescue-fail + update rescue-ok (connection ngắn)
+    # Pha ghi (connection ngắn). THỨ TỰ QUAN TRỌNG: UPDATE trước, DELETE sau.
+    # (Bản cũ xoá rescue-fail TRƯỚC update → xoá nhầm cả 96 phim rescue.)
     eng = create_engine(os.environ["DATABASE_URL"], pool_pre_ping=True)
     t0 = time.time()
     with eng.begin() as conn:
-        # 1. xoá phim không imdb_id (rác)
-        del_junk = conn.execute(text(
-            "DELETE FROM movies WHERE title ~ '^Q[0-9]+' AND (imdb_id IS NULL OR imdb_id = '')"
-        )).rowcount
-        # 2. xoá rescue fail (vẫn còn QID sau khi cố fetch — không sót QID lại)
-        del_fail = conn.execute(text(
-            "DELETE FROM movies WHERE title ~ '^Q[0-9]+' AND (imdb_id IS NOT NULL AND imdb_id <> '')"
-        )).rowcount
-        # 3. update rescue thành công
+        # 1. UPDATE rescue trước — chỉ áp dụng nếu title vẫn là QID (idempotent)
         updated = 0
         for movie_id, title in titles.items():
             res = conn.execute(text("UPDATE movies SET title = :t WHERE id = :i AND title ~ '^Q[0-9]+'"),
                                {"t": title, "i": movie_id})
             updated += res.rowcount
+        # 2. Xoá MỌI phim còn title=QID (rác không imdb_id + rescue fail) — SAU update
+        deleted = conn.execute(text("DELETE FROM movies WHERE title ~ '^Q[0-9]+'")).rowcount
 
     print(f"Hoàn tất trong {time.time() - t0:.1f}s:")
     print(f"  rescue OK: {updated} (cập nhật title từ IMDb)")
-    print(f"  xoá rác (không imdb_id): {del_junk}")
-    print(f"  xoá rescue-fail (IMDb không có og:title): {del_fail}")
-    # kiểm tra dư
+    print(f"  xoá (rác + rescue-fail): {deleted}")
     with eng.connect() as c:
         left = c.execute(text("SELECT count(*) FROM movies WHERE title ~ '^Q[0-9]+'")).scalar()
     print(f"  còn lại title=QID: {left}")
