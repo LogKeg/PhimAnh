@@ -12,6 +12,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Phải load .env TRƯỚC khi import services/config — poster_cache import config,
+# config._build_database_uri() chạy lúc import → thiếu DATABASE_URL → fallback SQLite.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from extensions import db  # noqa: E402
 from models import Movie  # noqa: E402
 from services.poster_cache import POSTER_DIR, R2_PUBLIC_BASE, _ext, _safe  # noqa: E402

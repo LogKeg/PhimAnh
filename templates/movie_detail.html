@@ -52,7 +52,7 @@
 
                     <div class="spec">
                         <dl>
-                            <dt>Đánh giá</dt>      <dd>{% if movie.imdb_rating %}★ {{ '%.1f'|format(movie.imdb_rating) }} <span style="opacity:.6">({{ '{:,.0f}'.format(movie.imdb_votes|default(0)) }} lượt IMDb)</span>{% else %}—{% endif %}</dd>
+                            <dt>Đánh giá</dt>      <dd>{% if movie.imdb_rating is not none %}★ {{ '%.1f'|format(movie.imdb_rating) }} <span style="opacity:.6">({{ '{:,.0f}'.format(movie.imdb_votes|default(0)) }} lượt IMDb)</span>{% else %}—{% endif %}</dd>
                             <dt>Năm</dt>           <dd>{{ movie.year or '—' }}</dd>
                             <dt>Ngày ra mắt</dt>   <dd>{{ movie.released or '—' }}</dd>
                             <dt>Thời lượng</dt>    <dd>{{ movie.runtime or '—' }}</dd>

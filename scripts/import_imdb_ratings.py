@@ -95,7 +95,7 @@ def main():
         return
 
     with eng.begin() as conn:
-        conn.execute(text("CREATE TEMP TABLE imdb_ratings (tconst TEXT, rating REAL, votes INT)"))
+        conn.execute(text("CREATE TEMP TABLE imdb_ratings (tconst TEXT, rating NUMERIC(3,1), votes INT)"))
         _bulk_insert(conn, rows)
         res = conn.execute(text("""
             UPDATE movies SET imdb_rating = r.rating, imdb_votes = r.votes

@@ -60,7 +60,9 @@ def _ensure_columns():
         if name in existing:
             continue
         col_type = column.type.compile(dialect)
-        db.session.execute(text(f'ALTER TABLE movies ADD COLUMN "{name}" {col_type}'))
+        # IF NOT EXISTS chống race khi nhiều serverless cold-start cùng ALTER
+        # (cả SQLite ≥3.35 và Postgres đều hỗ trợ).
+        db.session.execute(text(f'ALTER TABLE movies ADD COLUMN IF NOT EXISTS "{name}" {col_type}'))
     db.session.commit()
 
 

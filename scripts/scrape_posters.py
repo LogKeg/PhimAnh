@@ -74,25 +74,29 @@ def main():
     updated = 0
     for i in range(0, total, BATCH):
         chunk = rows[i:i + BATCH]
-        for movie_id, imdb_id, url, err in _fetch_chunk(chunk):
-            if url:
-                updates[movie_id] = poster_cache.cache_poster(url, imdb_id)
-                updated += 1
-                if len(updates) >= FLUSH:
-                    _flush(eng, updates)
-                    print(f"  lô {i // BATCH + 1}: đã ghi {updated} poster", flush=True)
-        _flush(eng, updates)
+        try:
+            for movie_id, imdb_id, url, err in _fetch_chunk(chunk):
+                if url:
+                    try:  # 1 phim lỗi (download/upload) không làm mất cả lô
+                        updates[movie_id] = poster_cache.cache_poster(url, imdb_id)
+                        updated += 1
+                    except Exception as exc:  # pylint: disable=broad-except
+                        print(f"  ⚠ cache_poster fail movie {movie_id}: {exc}", flush=True)
+                    if len(updates) >= FLUSH:
+                        _flush(eng, updates)
+                        print(f"  lô {i // BATCH + 1}: đã ghi {updated} poster", flush=True)
+        finally:
+            _flush(eng, updates)  # luôn flush dù fetch chunk ném exception
         print(f"lô {i // BATCH + 1}: xong {len(chunk)} phim (tích lũy {updated}/{total})", flush=True)
     print(f"Hoàn tất: +{updated}/{total} poster.")
 
 
 def _fetch_chunk(chunk):
     """Generator: yield (movie_id, imdb_id, url, err) cho chunk qua 1 browser."""
-    items = [(mid, imdb_id) for mid, imdb_id in chunk]
+    id_map = dict(chunk)  # {movie_id: imdb_id} — tra O(1) thay vì scan O(n)
+    items = list(id_map.items())
     for movie_id, url, err in imdb.imdb_posters_iter(items, limit=len(items)):
-        # tìm imdb_id tương ứng
-        imdb_id = next((im for mid, im in chunk if mid == movie_id), "")
-        yield movie_id, imdb_id, url, err
+        yield movie_id, id_map.get(movie_id, ""), url, err
 
 
 if __name__ == "__main__":

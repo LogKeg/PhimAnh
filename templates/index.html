@@ -191,7 +191,7 @@
                             {% else %}
                                 <div class="poster-noimg">{{ movie.title }}</div>
                             {% endif %}
-                            {% if movie.imdb_rating %}
+                            {% if movie.imdb_rating is not none %}
                                 <span class="poster-rating" title="{{ movie.imdb_votes|default(0) }} lượt">★ {{ '%.1f'|format(movie.imdb_rating) }}</span>
                             {% endif %}
                             <div class="poster-title">{{ movie.title }}</div>
