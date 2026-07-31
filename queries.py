@@ -75,12 +75,12 @@ def get_filter_values():
 
 
 def get_featured():
-    """Phim tiêu điểm cho hero bìa: điểm IMDb cao nhất có poster (tiebreak: lượt vote)."""
+    """Phim tiêu điểm cho hero bìa: mới nhất có poster (năm giảm dần)."""
     return (
         Movie.query
-        .filter(Movie.imdb_rating.isnot(None))
         .filter(Movie.poster_url.isnot(None), Movie.poster_url != "")
-        .order_by(Movie.imdb_rating.desc(), Movie.imdb_votes.desc())
+        .filter(Movie.year.isnot(None))
+        .order_by(Movie.year.desc(), Movie.released.desc())
         .first()
     )
 
